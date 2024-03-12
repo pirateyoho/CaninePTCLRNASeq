@@ -10,5 +10,5 @@ The order in which scripts were run was as follows:
 5. fastQC.sbatch
 6. multiQC.sbatch
 7. Bioconductor Package Install.Rmd
-8. RNAseq-Analysis.Rmd
+8. 2023-RNAseq-Analysis.Rmd
 9. Various downstream analyses in R: clusterProfiler, hierarchical clustering, GSEA, GSVA, etc.

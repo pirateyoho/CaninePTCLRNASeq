@@ -1,7 +1,7 @@
 # Background
 This repository contains various bash scripts and R Markdown files utilized for an RNA-sequencing pipeline for 96 canine CD4+ PTCLs, 2 sorted control CD4+ thymocytes, and 5 sorted control CD4+ nodal lymphocytes.
 
-# Description of scripts
+# Pipeline
 Bash scripts (.sh and .sbatch) were run on the CURC Alpine supercomputer in a dedicated conda environment containing the software packages sra-tools, fastp, bedtools, samtools, star, fastqc, and multiqc. R Markdown documents were run in R Studio.
 
 The order in which scripts were run was as follows:

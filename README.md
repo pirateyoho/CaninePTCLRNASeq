@@ -328,33 +328,56 @@ The following packages were installed into a conda (Anaconda, Inc.) environment 
 | zstd                      | 1.5.0        | ha95c52a_0          | conda-forge |
 
 The following packages were installed and run in RStudio (version 0.13) using R (version 4.1.2):
-| Name                 | Version |
-| -------------------- | ------- |
-| EnhancedVolcano      | 1.12.0  |
-| forcats              | 0.5.1   |
-| dplyr                | 1.0.9   |
-| readr                | 2.1.2   |
-| tibble               | 3.1.7   |
-| tidyverse            | 1.3.1   |
-| pheatmap             | 1.0.12  |
-| corrplot             | 0.92    |
-| SummarizedExperiment | 1.24.0  |
-| MatrixGenerics       | 1.6.0   |
-| GenomicRanges        | 1.46.1  |
-| IRanges              | 2.28.0  |
-| BiocGenerics         | 0.40.0  |
-| ggrepel              | 0.9.1   |
-| stringr              | 1.4.0   |
-| purrr                | 0.3.4   |
-| tidyr                | 1.2.0   |
-| ggplot2              | 3.3.6   |
-| apeglm               | 1.16.0  |
-| RColorBrewer         | 1.1-3   |
-| DESeq2               | 1.34.0  |
-| Biobase              | 2.54.0  |
-| matrixStats          | 0.62.0  |
-| GenomeInfoDb         | 1.30.1  |
-| S4Vectors            | 0.32.4  |
+| Name                 | Version           |
+| -------------------- | ----------------- |
+| annotate             | 1.76.0            |
+| AnnotationDbi        | 1.60.0            |
+| apeglm               | 1.16.0            |
+| Biobase              | 2.54.0 and 2.58.0 |
+| BiocGenerics         | 0.40.0 and 0.44.0 |
+| BiocManager          | 1.30.19           |
+| Biostrings           | 2.66.0            |
+| clusterProfiler      | 4.6.0             |
+| corrplot             | 0.92              |
+| cowplot              | 1.1.1             |
+| DESeq2               | 1.34.0            |
+| dplyr                | 1.0.9 and 1.1.0   |
+| EnhancedVolcano      | 1.12.0            |
+| forcats              | 0.5.1             |
+| GenomeInfoDb         | 1.30.1 and 1.34.9 |
+| GenomicRanges        | 1.46.1 and 1.50.2 |
+| GGally               | 2.1.2             |
+| ggplot2              | 3.3.6 and 3.4.1   |
+| ggrepel              | 0.9.1             |
+| gplots               | 3.1.3             |
+| graph                | 1.76.0            |
+| gridExtra            | 2.3               |
+| GSEABase             | 1.60.0            |
+| GSVA                 | 1.46.0            |
+| IRanges              | 2.28.0 and 2.32.0 |
+| knitr                | 1.42              |
+| limma                | 3.54.1            |
+| magrittr             | 2.0.3             |
+| MatrixGenerics       | 1.6.0 and 1.10.0  |
+| matrixStats          | 0.62.0 and 0.63.0 |
+| msigdbr              | 7.5.1             |
+| pheatmap             | 1.0.12            |
+| purrr                | 0.3.4             |
+| qusage               | 2.32.0            |
+| RColorBrewer         | 1.1-3             |
+| readr                | 2.1.2 and 2.1.4   |
+| Rsamtools            | 2.14.0            |
+| rtracklayer          | 1.58.0            |
+| S4Vectors            | 0.32.4 and 0.36.1 |
+| shinybusy            | 0.3.1             |
+| shinyjs              | 2.1.0             |
+| stringr              | 1.4.0 and 1.5.0   |
+| SummarizedExperiment | 1.24.0 and 1.28.0 |
+| tibble               | 3.1.7             |
+| tidyr                | 1.2.0             |
+| tidyverse            | 1.3.1             |
+| XML                  | 3.99-0.13         |
+| XVector              | 0.38.0            |
 
 ### Cohort 2
 The following packages were installed into a conda (Anaconda, Inc.) environment on the CU Research Computing Alpine High Performance Computing Cluster:
@@ -560,32 +583,61 @@ The following packages were installed into a conda (Anaconda, Inc.) environment 
 | zstd                      | 1.5.2        | h3eb15da_6              | conda-forge      |
 
 The following packages were installed and run in RStudio (version 0.14) using R (version 4.4.2):
-| Name                 | Version |
-| -------------------- | ------- |
-| EnhancedVolcano      | 1.16.0  |
-| enrichplot           | 1.18.3  |
-| forcats              | 1.0.0   |
-| dplyr                | 1.1.0   |
-| readr                | 2.1.4   |
-| tibble               | 3.1.8   |
-| tidyverse            | 1.3.2   |
-| pheatmap             | 1.0.12  |
-| corrplot             | 0.92    |
-| SummarizedExperiment | 1.28.0  |
-| MatrixGenerics       | 1.10.0  |
-| GenomicRanges        | 1.50.2  |
-| IRanges              | 2.32.0  |
-| BiocGenerics         | 0.44.0  |
-| ggrepel              | 0.9.3   |
-| clusterProfiler      | 4.6.0   |
-| stringr              | 1.5.0   |
-| purrr                | 1.0.1   |
-| tidyr                | 1.3.0   |
-| ggplot2              | 3.4.1   |
-| apeglm               | 1.20.0  |
-| RColorBrewer         | 1.1-3   |
-| DESeq2               | 1.38.3  |
-| Biobase              | 2.58.0  |
-| matrixStats          | 0.63.0  |
-| GenomeInfoDb         | 1.34.9  |
-| S4Vectors            | 0.36.1  |
+| Name                 | Version                    |
+| -------------------- | -------------------------- |
+| annotate             | 1.76.0                     |
+| AnnotationDbi        | 1.60.0                     |
+| apeglm               | 1.20.0 and 1.24.0          |
+| Biobase              | 2.58.0 and 2.62.0          |
+| BiocGenerics         | 0.44.0 and 0.48.1          |
+| BiocManager          | 1.30.19                    |
+| Biostrings           | 2.66.0                     |
+| clusterProfiler      | 4.6.0                      |
+| clusterProfiler      | 4.6.0 and 4.10.0           |
+| corrplot             | 0.92                       |
+| cowplot              | 1.1.1                      |
+| DESeq2               | 1.38.3                     |
+| DOSE                 | 3.24.2                     |
+| dplyr                | 1.1.0 and 1.1.4            |
+| EnhancedVolcano      | 1.16.0                     |
+| enrichplot           | 1.18.3 and 1.22.0          |
+| forcats              | 1.0.0                      |
+| GenomeInfoDb         | 1.34.9, 1.38.7, and 1.50.2 |
+| GenomicRanges        | 1.50.2 and 1.54.1          |
+| GGally               | 2.1.2                      |
+| ggnewscale           | 0.4.8                      |
+| ggplot2              | 3.4.1 and 3.5.0            |
+| ggrepel              | 0.9.3 and 0.9.5            |
+| ggridges             | 0.5.4                      |
+| graph                | 1.76.0                     |
+| gridExtra            | 2.3                        |
+| GSEABase             | 1.60.0                     |
+| gson                 | 0.0.9                      |
+| GSVA                 | 1.46.0                     |
+| IRanges              | 2.32.0 and 2.36.0          |
+| knitr                | 1.42                       |
+| limma                | 3.54.1                     |
+| lubridate            | 1.9.3                      |
+| magrittr             | 2.0.3                      |
+| MatrixGenerics       | 1.10.0                     |
+| MatrixGenerics       | 1.10.0 and 1.14.0          |
+| matrixStats          | 0.63.0 and 1.2.0           |
+| msigdbr              | 7.5.1                      |
+| pathview             | 1.38.0                     |
+| pheatmap             | 1.0.12                     |
+| purrr                | 1.0.1 and 1.0.2            |
+| qusage               | 2.32.0                     |
+| RColorBrewer         | 1.1-3                      |
+| ReactomePA           | 1.42.0                     |
+| readr                | 2.1.4 and 2.1.5            |
+| Rsamtools            | 2.14.0                     |
+| rtracklayer          | 1.58.0                     |
+| S4Vectors            | 0.36.1 and 0.40.2          |
+| shinybusy            | 0.3.1                      |
+| stringr              | 1.5.0, 1.5.1, and 2.1.0    |
+| SummarizedExperiment | 1.28.0 and 1.32.0          |
+| tibble               | 3.1.8 and 3.2.1            |
+| tidyr                | 1.3.0 and 1.3.1            |
+| tidyverse            | 1.3.2 and 2.0.0            |
+| XML                  | 3.99-0.13                  |
+| XVector              | 0.38.0                     |

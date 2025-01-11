@@ -1,8 +1,6 @@
 # Bulk RNA-sequencing of canine PTCL
 ## Background
 This repository details a bioinformatics pipeline utilized for RNA-sequencing analysis of two cohorts of canine PTCLs, sorted control canine CD4+ and CD8+ nodal lymphocytes, and sorted control canine CD4+ thymocytes.
-## Pipeline
-Bash scripts (.sh and .sbatch) were run on the CURC Alpine supercomputer in a dedicated conda environment containing the software packages sra-tools, fastp, bedtools, samtools, star, fastqc, and multiqc. R Markdown documents were run in R Studio.
 ## Overview of cohorts
 | **Cohort**| **# CD4+ PTCLs** | **# CD8+ PTCLs**| **# DN PTCLs** | **# control nodal CD4+ lymphocytes** | **# control CD8+ lymphocytes** | **# control CD4+ thymocytes** | **Year RNA-sequencing performed** |
 |:---------:|:----------------:|:---------------:|:--------------:|:------------------------------------:|:------------------------------:|:-----------------------------:|:---------------------------------:|

@@ -592,7 +592,6 @@ The following packages were installed and run in RStudio (version 0.14) using R 
 | BiocGenerics         | 0.44.0 and 0.48.1          |
 | BiocManager          | 1.30.19                    |
 | Biostrings           | 2.66.0                     |
-| clusterProfiler      | 4.6.0                      |
 | clusterProfiler      | 4.6.0 and 4.10.0           |
 | corrplot             | 0.92                       |
 | cowplot              | 1.1.1                      |

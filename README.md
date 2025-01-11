@@ -4,9 +4,9 @@ This repository details a bioinformatics pipeline utilized for RNA-sequencing an
 Bash scripts (.sh and .sbatch) were run on the CURC Alpine supercomputer in a dedicated conda environment containing the software packages sra-tools, fastp, bedtools, samtools, star, fastqc, and multiqc. R Markdown documents were run in R Studio.
 ## Overview of cohorts
 | **Cohort**| **# CD4+ PTCLs** | **# CD8+ PTCLs**| **# DN PTCLs** | **# control nodal CD4+ lymphocytes** | **# control CD8+ lymphocytes** | **# control CD4+ thymocytes** | **Year sequencing performed** |
-|:---------:|:----------------:|:---------------:|:---------------------:|:------------------------------------:|:------------------------------:|:------------------------------|:-----------------------------:|
-| 1         | 26               | 4               | 3                     | 4                                    | 3                              | 0                             | 2019                          |
-| 2         | 96               | 0               | 0                     | 5                                    | 0                              | 2                             | 2023                          |
+|:---------:|:----------------:|:---------------:|:--------------:|:------------------------------------:|:------------------------------:|:------------------------------|:-----------------------------:|
+| 1         | 26               | 4               | 3              | 4                                    | 3                              | 0                             | 2019                          |
+| 2         | 96               | 0               | 0              | 5                                    | 0                              | 2                             | 2023                          |
 
 ## Raw data
 Raw fastq files are available from two CSU shared drives: the Nas drive for members of the Clinical Hematopathology Laboratory, or the Avery lab RSTOR shared drive.

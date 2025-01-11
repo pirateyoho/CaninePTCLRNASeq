@@ -13,11 +13,12 @@ This repository details a bioinformatics pipeline utilized for RNA-sequencing an
 9. Gene set variation analysis performed with GSVA.
 10. Fusion calling with STAR-Fusion (Cohort 2 only).
 ## Overview of cohorts
+### Summary
 | **Cohort**| **# CD4+ PTCLs** | **# CD8+ PTCLs**| **# DN PTCLs** | **# control nodal CD4+ lymphocytes** | **# control CD8+ lymphocytes** | **# control CD4+ thymocytes** | **Year RNA-sequencing performed** |
 |:---------:|:----------------:|:---------------:|:--------------:|:------------------------------------:|:------------------------------:|:-----------------------------:|:---------------------------------:|
 | 1         | 26               | 4               | 3              | 4                                    | 3                              | 0                             | 2019                              |
 | 2         | 96               | 0               | 0              | 5                                    | 0                              | 2                             | 2023                              |
-
+### Details
 | Avery lab number | Sample name | Experiment group                        | Breed                         | Sex            | Age (yrs) | Sample location        |
 | ---------------- | ----------- | --------------------------------------- | ----------------------------- | -------------- | --------- | ---------------------- |
 | 100641           | CF01        | Cohort 1 CD4+ PTCL                      | Miniature Australian Shepherd | Male Castrated | 5         | Lymph Node             |

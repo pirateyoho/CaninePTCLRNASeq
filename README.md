@@ -1,11 +1,176 @@
 # Bulk RNA-sequencing of canine PTCL
 ## Background
 This repository details a bioinformatics pipeline utilized for RNA-sequencing analysis of two cohorts of canine PTCLs, sorted control canine CD4+ and CD8+ nodal lymphocytes, and sorted control canine CD4+ thymocytes.
+## Pipeline overview
+1. Adapters and low quality reads trimmed with fastp.
+2. Acquisition of reference genome files from Ensembl and reference genome index builds with STAR.
+3. Reads aligned to reference genome(s) with STAR.
+4. Number of reads per gene tabulated by featureCounts.
+5. QA/QC performed with fastqc and MultiQC.
+6. Data normalization, principal component analysis, and differential gene expression analysis conducted with DESeq2.
+7. Heatmaps and hierarchical clustering analysis performed with pheatmap.
+8. Gene set enrichment analysis performed with clusterProfiler.
+9. Gene set variation analysis performed with GSVA.
+10. Fusion calling with STAR-Fusion (Cohort 2 only).
 ## Overview of cohorts
 | **Cohort**| **# CD4+ PTCLs** | **# CD8+ PTCLs**| **# DN PTCLs** | **# control nodal CD4+ lymphocytes** | **# control CD8+ lymphocytes** | **# control CD4+ thymocytes** | **Year RNA-sequencing performed** |
 |:---------:|:----------------:|:---------------:|:--------------:|:------------------------------------:|:------------------------------:|:-----------------------------:|:---------------------------------:|
 | 1         | 26               | 4               | 3              | 4                                    | 3                              | 0                             | 2019                              |
 | 2         | 96               | 0               | 0              | 5                                    | 0                              | 2                             | 2023                              |
+
+| Avery lab number | Sample name | Experiment group                        | Breed                         | Sex            | Age (yrs) | Sample location        |
+| ---------------- | ----------- | --------------------------------------- | ----------------------------- | -------------- | --------- | ---------------------- |
+| 100641           | CF01        | Cohort 1 CD4+ PTCL                      | Miniature Australian Shepherd | Male Castrated | 5         | Lymph Node             |
+| 100850           | CF02        | Cohort 1 CD4+ PTCL                      | Shih Tzu                      | Male Castrated | 11        | Lymph Node             |
+| 100993           | CF03        | Cohort 1 CD4+ PTCL                      | Boxer                         | Female Spayed  | 9         | Lymph Node             |
+| 101765           | CF04        | Cohort 1 CD8+ PTCL                      | Mixed breed                   | Female Spayed  | 12        | Lymph Node             |
+| 101786           | CF05        | Cohort 1 CD4+ PTCL                      | Golden Retriever              | Female Spayed  | 10        | Lymph Node             |
+| 103939           | CF06        | Cohort 1 CD8+ PTCL                      | Mixed breed                   | Male Castrated | 5         | Lymph Node             |
+| 104029           | CF07        | Cohort 1 CD4+ PTCL                      | Mixed breed                   | Male Castrated | 11        | Lymph Node             |
+| 104921           | CF08        | Cohort 1 CD4-CD8- PTCL                  | Cocker Spaniel                | Female Spayed  | 3         | Lymph Node             |
+| 104999           | CF09        | Cohort 1 CD4-CD8- PTCL                  | Mixed breed                   | Female Spayed  | 4         | Lymph Node             |
+| 105063           | CF10        | Cohort 1 CD8+ PTCL                      | Mixed breed                   | Female Spayed  | 13        | Lymph Node             |
+| 105392           | CF11        | Cohort 1 CD8+ PTCL                      | Lhasa Apso                    | Male Castrated | Unknown   | Lymph Node             |
+| 107029           | CF12        | Cohort 1 Control CD4+ nodal lymphocytes | Beagle, Beagle                | Male, Female   | 1, 1      | Lymph Node             |
+| 107031           | CF13        | Cohort 1 Control CD8+ nodal lymphocytes | Hound, Hound                  | Female, Female | 1, 1      | Lymph Node             |
+| 107032           | CF14        | Cohort 1 Control CD8+ nodal lymphocytes | Hound, Hound                  | Female, Female | 1, 1      | Lymph Node             |
+| 60342            | CF15        | Cohort 1 CD4+ PTCL                      | Mixed breed                   | Male Castrated | 6         | Lymph Node             |
+| 63491            | CF16        | Cohort 1 Control CD8+ nodal lymphocytes | Hound                         | Female         | 1         | Lymph Node             |
+| 63500            | CF17        | Cohort 1 Control CD4+ nodal lymphocytes | Hound                         | Female         | 1         | Lymph Node             |
+| 65026            | CF18        | Cohort 1 CD4+ PTCL                      | Boxer                         | Male Castrated | 5         | Lymph Node             |
+| 67283            | CF19        | Cohort 1 CD4+ PTCL                      | Boxer                         | Female Spayed  | 4         | Mediastinum            |
+| 67308            | CF20        | Cohort 1 CD4+ PTCL                      | German Shepherd               | Female Spayed  | 6         | Bone Marrow            |
+| 69996            | CF21        | Cohort 1 CD4+ PTCL                      | Labrador Retriever            | Male Castrated | 7         | Mediastinum            |
+| 71175            | CF22        | Cohort 1 CD4+ PTCL                      | Chesapeake Bay Retriever      | Male Castrated | 7         | Lymph Node             |
+| 71312            | CF23        | Cohort 1 CD4+ PTCL                      | Golden Retriever              | Male Castrated | 10        | Lymph Node             |
+| 71508            | CF24        | Cohort 1 CD4+ PTCL                      | Rhodesian Ridgeback           | Male Castrated | 3         | Mediastinum            |
+| 71605            | CF25        | Cohort 1 CD4+ PTCL                      | Golden Retriever              | Male Castrated | 4         | Lymph Node             |
+| 71779            | CF26        | Cohort 1 CD4+ PTCL                      | Dogue de Bordeaux             | Male Castrated | 5         | Lymph Node             |
+| 76055            | CF27        | Cohort 1 CD4+ PTCL                      | Boxer                         | Male Castrated | 9         | Lymph Node             |
+| 76392            | CF28        | Cohort 1 CD4+ PTCL                      | Boxer                         | Female Spayed  | 10        | Lymph Node             |
+| 77877            | CF29        | Cohort 1 Control CD4+ nodal lymphocytes | Beagle                        | Male           | 1         | Lymph Node             |
+| 80398            | CF30        | Cohort 1 Control CD4+ nodal lymphocytes | Mixed breed                   | Female         | 1         | Lymph Node             |
+| 95512            | CF31        | Cohort 1 CD4+ PTCL                      | Mixed breed                   | Male Castrated | 6         | Lymph Node             |
+| 95591            | CF32        | Cohort 1 CD4+ PTCL                      | Golden Doodle                 | Male Castrated | 10        | Lymph Node             |
+| 95593            | CF33        | Cohort 1 CD4+ PTCL                      | Boxer                         | Male Castrated | 7         | Lymph Node             |
+| 96300            | CF34        | Cohort 1 CD4+ PTCL                      | Golden Retriever              | Male Castrated | 5         | Lymph Node             |
+| 97074            | CF35        | Cohort 1 CD4+ PTCL                      | Mixed breed                   | Male Castrated | 10        | Lymph Node             |
+| 97336            | CF36        | Cohort 1 CD4+ PTCL                      | Golden Retriever              | Male Castrated | 4         | Lymph Node             |
+| 97568            | CF37        | Cohort 1 CD4+ PTCL                      | Australian Shepherd           | Male Castrated | 10        | Lymph Node             |
+| 97573            | CF38        | Cohort 1 CD4-CD8- PTCL                  | Pomeranian                    | Male Castrated | 11        | Lymph Node             |
+| 97578            | CF39        | Cohort 1 CD4+ PTCL                      | Shetland Sheepdog             | Male Castrated | 8         | Lymph Node             |
+| 98458            | CF40        | Cohort 1 CD4+ PTCL                      | Presa Canario                 | Female Spayed  | 5         | Lymph Node             |
+| 80411            | CF41        | Thymus Control                          | Mixed breed                   | Female         | 1         | Thymus                 |
+| 80416            | CF42        | Thymus Control                          | Mixed breed                   | Female         | 1         | Thymus                 |
+| 90971            | CF43        | Thymus Control                          | Mixed breed                   | Female         | 1         | Thymus                 |
+| 90972            | CF44        | Thymus Control                          | Mixed breed                   | Female         | 1         | Thymus                 |
+| 90973            | CF45        | Thymus Control                          | Mixed breed                   | Female         | 1         | Thymus                 |
+| 90974            | CF46        | Thymus Control                          | Mixed breed                   | Female         | 1         | Thymus                 |
+| 144035           | CF47        | Thymus Control                          | Mixed breed                   | Female         | 2         | Thymus                 |
+| 156596           | CF48        | Thymus Control                          | Mixed breed                   | Female         | 0.58      | Thymus                 |
+| 101495           | CF49        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 8         | Lymph node             |
+| 102794           | CF50        | Cohort 2 CD4+ PTCL                      | PAP                           | MC             | 11        | Mediastinum            |
+| 104568           | CF51        | Cohort 2 CD4+ PTCL                      | Australian Shepherd           | FS             | 5         | Lymph node             |
+| 104569           | CF52        | Cohort 2 CD4+ PTCL                      | ECCKS                         | FS             | 6         | Lymph node             |
+| 104689           | CF53        | Cohort 2 CD4+ PTCL                      | BOYSP                         | M              | 6         | Lymph node             |
+| 105160           | CF54        | Cohort 2 CD4+ PTCL                      | Labrador retriever            | M              | 4         | Lymph node             |
+| 105374           | CF55        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 2         | Lymph node             |
+| 105488           | CF56        | Cohort 2 CD4+ PTCL                      | YORK                          | MC             | 7         | Lymph node             |
+| 105552           | CF57        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 12        | Lymph node             |
+| 105669           | CF58        | Cohort 2 CD4+ PTCL                      | Golden retriever              | MC             | 7         | Lymph node             |
+| 105719           | CF59        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 5         | Lymph node             |
+| 105729           | CF60        | Cohort 2 CD4+ PTCL                      | Golden retriever              | MC             | 5         | Lymph node             |
+| 105804           | CF61        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 4         | Lymph node             |
+| 105835           | CF62        | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 7         | Lymph node             |
+| 106316           | CF63        | Cohort 2 CD4+ PTCL                      | Australian Shepherd           | MC             | 5         | Lymph node             |
+| 106347           | CF64        | Cohort 2 CD4+ PTCL                      | STBN                          | MC             | 9         | Lymph node             |
+| 106392           | CF65        | Cohort 2 CD4+ PTCL                      | BCOL                          | MC             | 7         | Lymph node             |
+| 106419           | CF66        | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 4         | Lymph node             |
+| 124711           | CF67        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 6         | Lymph node             |
+| 124777           | CF68        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 6         | Lymph node             |
+| 124799           | CF69        | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 7         | Lymph node             |
+| 124809           | CF70        | Cohort 2 CD4+ PTCL                      | Boxer                         | F              | 4         | Lymph node             |
+| 149694           | CF71        | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 7         | Lymph node             |
+| 149695           | CF72        | Cohort 2 CD4+ PTCL                      | OESD                          | FS             | 4         | Lymph node             |
+| 150394           | CF73        | Cohort 2 CD4+ PTCL                      | Labradoodle                   | MC             | 5         | Lymph node             |
+| 150689           | CF74        | Cohort 2 CD4+ PTCL                      | German Shepherd               | MC             | 7         | Lymph node             |
+| 150972           | CF75        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 6         | Lymph node             |
+| 151879           | CF76        | Cohort 2 CD4+ PTCL                      | PBT                           | MC             | 5         | Lymph node             |
+| 152043           | CF77        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 4         | Lymph node             |
+| 152139           | CF78        | Cohort 2 CD4+ PTCL                      | SPRSP                         | MC             | 6         | Lymph node             |
+| 152256           | CF79        | Cohort 2 CD4+ PTCL                      | HUS                           | MC             | 4         | Lymph node             |
+| 152603           | CF80        | Cohort 2 CD4+ PTCL                      | Australian Shepherd           | MC             | 9         | Lymph node             |
+| 152610           | CF81        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 5         | Lymph node-mesenteric  |
+| 152824           | CF82        | Cohort 2 CD4+ PTCL                      | BMSTF                         | F              | 4         | Lymph node             |
+| 152837           | CF83        | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 4         | Lymph node             |
+| 153051           | CF84        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 6         | Lymph node             |
+| 153070           | CF85        | Cohort 2 CD4+ PTCL                      | CORG                          | FS             | 8         | Lymph node             |
+| 153316           | CF86        | Cohort 2 CD4+ PTCL                      | Golden doodle                 | FS             | 6         | Lymph node             |
+| 153427           | CF87        | Cohort 2 CD4+ PTCL                      | AMSTAFF                       | MC             | 3         | Lymph node             |
+| 153429           | CF88        | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 5         | Lymph node             |
+| 154958           | CF89        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 8         | Lymph node             |
+| 154980           | CF90        | Cohort 2 CD4+ PTCL                      | SHTZ                          | MC             | 9         | Lymph node             |
+| 155416           | CF91        | Cohort 2 CD4+ PTCL                      | ENGST                         | F              | 5         | Lymph node             |
+| 155427           | CF92        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 6         | Lymph node             |
+| 155939           | CF93        | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 8         | Lymph node             |
+| 156336           | CF94        | Cohort 2 CD4+ PTCL                      | CAT                           | MC             | 7         | Lymph node-mesenteric  |
+| 156355           | CF95        | Cohort 2 CD4+ PTCL                      | Golden retriever              | M              | 5         | Mediastinum            |
+| 158400           | CF96        | Cohort 2 CD4+ PTCL                      | AIR                           | MC             | 10        | Lymph node             |
+| 158477           | CF97        | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 6         | Lymph node             |
+| 158538           | CF98        | Cohort 2 CD4+ PTCL                      | CCRSO                         | MC             | 10        | Lymph node             |
+| 158606           | CF99        | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 7         | Lymph node             |
+| 158821           | CF100       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 6         | Lymph node             |
+| 159153           | CF101       | Cohort 2 CD4+ PTCL                      | Labrador retriever            | FS             | 10        | Lymph node             |
+| 160115           | CF102       | Cohort 2 CD4+ PTCL                      | Golden doodle                 | MC             | 4         | Lymph node             |
+| 160275           | CF103       | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 10        | Lymph node             |
+| 161206           | CF104       | Cohort 2 CD4+ PTCL                      | WEIM                          | FS             | 5         | Lymph node             |
+| 161277           | CF105       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 5         | Lymph node             |
+| 161398           | CF106       | Cohort 2 CD4+ PTCL                      | German Shepherd               | FS             | 10        | Lymph node             |
+| 162673           | CF107       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 7         | Lymph node             |
+| 163077           | CF108       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 10        | Lymph node             |
+| 163081           | CF109       | Cohort 2 CD4+ PTCL                      | Australian ShepherdCD         | MC             | 4         | Lymph node             |
+| 163085           | CF110       | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 5         | Lymph node             |
+| 164032           | CF111       | Cohort 2 CD4+ PTCL                      | YORK                          | FS             | 9         | Lymph node             |
+| 164076           | CF112       | Cohort 2 CD4+ PTCL                      | CORG                          | MC             | 5         | Lymph node-mediastinal |
+| 164535           | CF113       | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 4         | Lymph node             |
+| 164787           | CF114       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 11        | Lymph node             |
+| 164790           | CF115       | Cohort 2 CD4+ PTCL                      | Australian Shepherd           | FS             | 5         | Lymph node             |
+| 164860           | CF116       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 5         | Lymph node             |
+| 164934           | CF117       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 8         | Lymph node             |
+| 164968           | CF118       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 3         | Lymph node             |
+| 165162           | CF119       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 8         | Lymph node             |
+| 165189           | CF120       | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 7         | Lymph node             |
+| 165411           | CF121       | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 5         | Lymph node             |
+| 165426           | CF122       | Cohort 2 CD4+ PTCL                      | Golden retriever              | FS             | 6         | Lymph node             |
+| 165577           | CF123       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 8         | Lymph node             |
+| 165644           | CF124       | Cohort 2 CD4+ PTCL                      | BLHRL                         | FS             | 4         | Lymph node             |
+| 165769           | CF125       | Cohort 2 CD4+ PTCL                      | PBT                           | FS             | 3         | Lymph node             |
+| 165776           | CF126       | Cohort 2 CD4+ PTCL                      | BLLDAM                        | FS             | 5         | Lymph node             |
+| 166151           | CF127       | Cohort 2 CD4+ PTCL                      | GLD                           | MC             | 8         | Lymph node             |
+| 166393           | CF128       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 7         | Lymph node             |
+| 166465           | CF129       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 7         | Lymph node             |
+| 166472           | CF130       | Cohort 2 CD4+ PTCL                      | Australian Shepherd           | MC             | 12        | Lymph node             |
+| 166556           | CF131       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 13        | Lymph node             |
+| 166625           | CF132       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 8         | Lymph node             |
+| 167185           | CF133       | Cohort 2 CD4+ PTCL                      | Boxer                         | FS             | 6         | Lymph node             |
+| 169715           | CF134       | Cohort 2 CD4+ PTCL                      | OESD                          | MC             | 3         | Lymph node             |
+| 171323           | CF135       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 4         | Lymph node             |
+| 171436           | CF136       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | MC             | 5         | Lymph node             |
+| 171487           | CF137       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 7         | Lymph node             |
+| 171535           | CF138       | Cohort 2 CD4+ PTCL                      | Golden doodle                 | FS             | 8         | Lymph node             |
+| 171729           | CF139       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | FS             | 6         | Lymph node             |
+| 171788           | CF140       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 9         | Lymph node             |
+| 171792           | CF141       | Cohort 2 CD4+ PTCL                      | Boxer                         | MC             | 11        | Lymph node             |
+| 171818           | CF142       | Cohort 2 CD4+ PTCL                      | NEWFIE                        | MC             | 4         | Lymph node             |
+| 171906           | CF143       | Cohort 2 CD4+ PTCL                      | Mixed breed                   | M-             | 5         | Lymph node             |
+| 172331           | CF144       | Cohort 2 CD4+ PTCL                      | Golden doodle                 | MC             | 7         | Lymph node             |
+| 80397            | CF145       | Cohort 2 Control CD4+ nodal lymphocytes | Mixed breed                   | Female         | 1         | Lymph node             |
+| 80399            | CF146       | Cohort 2 Control CD4+ nodal lymphocytes | Mixed breed                   | Female         | 1         | Lymph node             |
+| 80400            | CF147       | Cohort 2 Control CD4+ nodal lymphocytes | Mixed breed                   | Female         | 1         | Lymph node             |
+| 156615           | CF148       | Cohort 2 Control CD4+ thymocytes        | Mixed breed                   | Female         | 0.66      | Thymus                 |
+| 156616           | CF149       | Cohort 2 Control CD4+ nodal lymphocytes | Mixed breed                   | Female         | 0.66      | Lymph node             |
+| 157907           | CF150       | Cohort 2 Control CD4+ nodal lymphocytes | Mixed breed                   | Female         | 0.73      | Lymph node             |
+| 157953           | CF151       | Cohort 2 Control CD4+ thymocytes        | Mixed breed                   | Female         | 0.73      | Thymus                 |
 
 ## Raw data
 Raw fastq files are available from two CSU shared drives: the Nas drive for members of the Clinical Hematopathology Laboratory, or the Avery lab RSTOR shared drive.
@@ -19,18 +184,6 @@ M:\CHLab data\Sequencing Data\230517_CD4PTCL_RNASeq_Owens\01.RawData
 O:\RSTOR-Avery\191106_PTCL_RNAseq_Harris\128.120.88.251\X202SC19091583-Z01-F001\rawdata
 #### Cohort 2
 O:\RSTOR-Avery\230517_CD4PTCL_RNASeq_Owens\01.RawData
-
-## Pipeline overview
-1. Adapters and low quality reads trimmed with fastp.
-2. Acquisition of reference genome files from Ensembl and reference genome index builds with STAR.
-3. Reads aligned to reference genome(s) with STAR.
-4. Number of reads per gene tabulated by featureCounts.
-5. QA/QC performed with fastqc and MultiQC.
-6. Data normalization, principal component analysis, and differential gene expression analysis conducted with DESeq2.
-7. Heatmaps and hierarchical clustering analysis performed with pheatmap.
-8. Gene set enrichment analysis performed with clusterProfiler.
-9. Gene set variation analysis performed with GSVA.
-10. Fusion calling with STAR-Fusion (Cohort 2 only).
 
 ## Software
 ### Cohort 1

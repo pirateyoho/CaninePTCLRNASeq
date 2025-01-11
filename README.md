@@ -30,6 +30,7 @@ O:\RSTOR-Avery\230517_CD4PTCL_RNASeq_Owens\01.RawData
 7. Heatmaps and hierarchical clustering analysis performed with pheatmap.
 8. Gene set enrichment analysis performed with clusterProfiler.
 9. Gene set variation analysis performed with GSVA.
+10. Fusion calling with STAR-Fusion (Cohort 2 only).
 
 ## Software
 ### Cohort 1

@@ -107,41 +107,10 @@ pathway_heatmap <- pheatmap::pheatmap(gsva_results,
  scale_fill_gradient(c('dodgerblue', 'black', "yellow"))# Shrink the pathway labels a tad
 ```
 
-# Single sample GSEA analysis
-```{r ssGSEA, results=FALSE, fig.height=6, fig.width=8, fig.fullwidth=TRUE}
-ssgsea_results <- gsva(
-  vsd_matrix, # count matrix
-  gmt, #gene sets from gmt file
-  method = "ssgsea",
-  # Appropriate for our vst transformed data
-  kcdf = "Gaussian",
-  # Minimum gene set size
-  min.sz = 10,
-  # Maximum gene set size
-  max.sz = 500,
-  # Compute Gaussian-distributed scores
-  mx.diff = TRUE,
-  # Don't print out the progress bar
-  verbose = FALSE)
-
-pathway_heatmap <- pheatmap::pheatmap(ssgsea_results,
-                                      annotation_col = metadata,
-                                      show_colnames = TRUE,
-                                      show_rownames = TRUE,
-                                      fontsize_row = 10,
-                                      cluster_cols = TRUE, 
-                                      cluster_rows = TRUE,
-                                      cutree_rows = 5, 
-                                      clustering_distance_rows = "euclidean", 
-                                     clustering_distance_cols = "euclidean",
-                                     clustering_method = "ward.D2") + 
- scale_fill_gradient(c('dodgerblue', 'black', "yellow"))# Shrink the pathway labels a tad
-```
 
 # Export results
 ```{r file-export}
 write.csv(gsva_results, "gsva_scClusters_CD4PTCL.csv")
-write.csv(ssgsea_results, "ssgsea_scClusters_CD4PTCL.csv")
 ```
 
 # Citations

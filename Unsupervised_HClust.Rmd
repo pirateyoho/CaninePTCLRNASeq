@@ -1,0 +1,179 @@
+---
+title: "Unsupervised-hierarchical-clustering"
+author: "Eileen Owens"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, include=FALSE}
+# Load packages
+library(BiocManager)
+library(DESeq2)
+library(clusterProfiler)
+library(corrplot)
+library(RColorBrewer)
+library(pheatmap)
+library(dplyr)
+library(readr)
+library(knitr)
+library(ggplot2)
+library(cowplot)
+library(gridExtra)
+library(rtracklayer)
+library(Rsamtools)
+library(grid)
+library(GGally)
+# library(edgeR)
+library(stringr)
+library(matrixStats)
+library(gridExtra)
+library(magrittr)
+library(GSVA)
+library(dplyr)
+library(GSEABase)
+library(shinyjs)
+library(shinybusy)
+library(qusage)
+library(msigdbr)
+library(Biobase)
+```
+
+```{r working-directory, include=FALSE}
+setwd("/Users/eileen/PTCL/PROJ01_26PTCLs/02_scripts")
+```
+
+# Data import
+```{r data-import}
+# Import dds object from DESeq2.
+dds <- readRDS("dds_CD4sOnly_noCF21.RData")
+# Perform vst transformation
+vsd <- assay(vst(dds))
+# Inspect object
+head(vsd)
+```
+# Feature selection
+The median absolute derivation and standard deviation are calculated for all rows in the read count data, and the top 2000 for each are selected for unsupervised heirarchical clustering.
+```{r feature-select}
+# Calculate the median absolute derivation and standard deviation for all rows in the vst transformed data. Note that the "1" in the 'apply' function indicates that the manipulation is performed on rows.
+mads = apply(vsd,1,mad) # median absolute deviation
+stdev = apply(vsd,1,sd) # standard deviation
+
+# check data distribution
+hist(mads, ylim=c(0,200), breaks=nrow(vsd)*0.1)
+hist(stdev, breaks=nrow(vsd)*0.1)
+
+# selecting features: top 2000 genes based on median absolute deviation or standard deviation
+# This indexes the vst transformed count data to include only those rows (probe IDs) that appeared in the top 2000 based on MAD or SD.
+mad2k=vsd[rev(order(mads))[1:2000],]
+sd2k=vsd[rev(order(stdev))[1:2000],]
+
+```
+## Import metadata for patient phenotype
+```{r metadata, results='hide'}
+# Import metadata
+samplePhenotype <- read.csv("../01_input/metadata_CD4sOnly_outlierRemoved.csv") # metadata file with sample name in one column and phenotype in a second column.
+rownames(samplePhenotype) <- colnames(mad2k) # colnames of mad2k should be the sample names.
+samplePhenotype <- samplePhenotype[,2, drop=FALSE] # Since we don't want the sample names annotated, remove this column now that we have rownames assigned to the appropriate sample ID.
+
+```
+## Convert probe ID to gene symbols for annotation on heatmaps.
+```{r metadata2}
+# Import metadata for probe IDs
+genenames <- read.csv('../01_input/gene.description.csv') # First column should be probe_id and second column gene_name
+
+# Convert count data from matrix array to data frame for easier merging of gene symbols for probe IDs
+mad2k = as.data.frame(mad2k)
+sd2k = as.data.frame(sd2k)
+
+# Merge the gene symbol metadata with our count data by probe ID.
+mad2k$probe_id <- rownames(mad2k) # Add probe ID column
+mad2k <- merge(as(mad2k,"data.frame"), genenames, by="probe_id", all.x=TRUE) # Adds a column of gene names for the associated probe ID
+
+sd2k$probe_id <- rownames(sd2k) # Add probe ID column
+sd2k <- merge(as(sd2k,"data.frame"), genenames, by="probe_id", all.x=TRUE) # Adds a column of gene names for the associated probe ID
+
+# Make the gene symbol column the rownames
+genesymbols <- c(mad2k$gene_name)
+rownames(mad2k) <- make.names(genesymbols, unique=TRUE) # unique=T will avoid errors if two rows have the same gene symbol
+
+genesymbols <- c(sd2k$gene_name)
+rownames(sd2k) <- make.names(genesymbols, unique=TRUE)
+
+# Drop the probe ID and gene symbol columns.
+mad2k <- subset(mad2k, select = -c(probe_id, gene_name))
+sd2k <- subset(sd2k, select = -c(probe_id, gene_name))
+
+# Inspect final result. Row names should be gene symbols, column names should be patient sample IDs, and there should be 2000 rows total.
+head(mad2k)
+dim(mad2k)
+head(sd2k)
+dim(sd2k)
+```
+
+
+# Heatmaps
+## Unsupervised hierarchical clustering of vst transformed read count data of the top 2000 genes (by median absolute derivation)
+```{r mad-heatmap}
+mad_heatmap <- pheatmap(mad2k, 
+              scale="row", 
+              color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+              cluster_rows=TRUE, 
+              cluster_cols=TRUE, 
+              clustering_distance_rows = "euclidean",
+              clustering_distance_cols = "euclidean",
+              clustering_method = "ward.D2",
+              annotation_col = samplePhenotype,
+              show_rownames = FALSE) # Change to TRUE if gene symbols should be annotated on the heatmap.
+```
+
+
+## Unsupervised hierarchical clustering of vst transformed read count data of the top 2000 genes (by standard derivation)
+```{r sd-heatmap}
+sd_heatmap <- pheatmap(sd2k, 
+              scale="row", 
+              color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+              cluster_rows=TRUE, 
+              cluster_cols=TRUE, 
+              clustering_distance_rows = "euclidean",
+              clustering_distance_cols = "euclidean",
+              clustering_method = "ward.D2",
+              annotation_col = samplePhenotype,
+              show_rownames = FALSE) # Change to TRUE if gene symbols should be annotated on the heatmap.
+```
+
+
+
+
+
+# Export data
+```{r export}
+# Export MAD and stdev calculation data
+#write.csv(mad2k, file="../03_output/230208exportedMADcalculation.csv")
+#write.csv(sd2k, file="../03_output/230208exportedSTDEVcalculation.csv")
+
+# Re-order original data (genes) to match ordering in heatmap (top-to-bottom)
+#mad_heatmap_rows <- rownames(mad2k[mad_heatmap$tree_row[["order"]],])
+#head(mad_heatmap_rows, n=20) # First 20 genes listed on the heatmap
+#tail(mad_heatmap_rows, n=20) # Bottom 20 genes listed on the heatmap
+
+plot(mad_heatmap$tree_col)
+plot(mad_heatmap$tree_row)
+
+# Cut row dendrogram into groups for gene-to-cluster assignment and export as CSV.
+cluster <- sort(cutree(mad_heatmap$tree_row, k=2)) # Exports the main 2 clusters
+cluster <- as.data.frame(cluster)
+write.csv(cluster, file="../03_output/230208exportedPheatmapClusters_wardD2clustering.csv")
+```
+
+
+
+# Citations
+```{r}
+sessionInfo()
+citation()
+```
+

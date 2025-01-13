@@ -65,6 +65,9 @@ Retrieve the collections of interest from MSigDB:
 m_t2g_C5 <- msigdbr(species = "Homo sapiens", category = "C5") %>%
   dplyr::select(gs_name, gene_symbol)
 
+m_t2g_C7 <- msigdbr(species = "Homo sapiens", category = "C7") %>%
+  dplyr::select(gs_name, gene_symbol)
+
 m_t2g_H <- msigdbr(species = "Homo sapiens", category = "H") %>%
   dplyr::select(gs_name, gene_symbol)
 
@@ -96,13 +99,47 @@ gse1_msigdb_C5 %>%
                          option="H") +
   scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
   geom_vline(xintercept = 0, linetype=2) +
-  labs(title="GSEA, MSigDB C5 Gene Sets", y = "Gene Set") +
+  labs(title="GSEA, CanFam3.1, MSigDB Gene Sets\nC5 Collection (Gene Ontology)", y = "Gene Set") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### Ridgeline plot
 ```{r ridgeplotC5, warning=FALSE}
 ridgeplot(gse1_msigdb_C5, showCategory=15) + labs(x = "enrichment distribution", title="GSEA, MSigDB C5 Gene Sets", y = "Gene Set") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+# Using all gene sets in the C7 (immunologic signatures) MSigDB category
+### Enrichment analysis
+```{r gsea_C7}
+gse1_msigdb_C7 <- GSEA(deg_genes_list1, # Use the sorted (ranked) list of gene symbols *and* stat ranking column
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_C7,
+                  verbose = TRUE,
+                  by = "fgsea")
+```
+
+### Dotplot
+```{r dotplotC7}
+gse1_msigdb_C7 %>%
+  dotplot(showCategory = 15, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, MSigDB Gene Sets\nC7 Collection (Immunologic Signatures)", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Ridgeline plot
+```{r ridgeplotC7, warning=FALSE}
+ridgeplot(gse1_msigdb_C7, showCategory=15) + labs(x = "enrichment distribution", title="GSEA, MSigDB C7 Gene Sets", y = "Gene Set") +
   scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
   theme(plot.title = element_text(hjust = 0.5))
 ```
@@ -131,7 +168,7 @@ gse1_msigdb_H %>%
                          option="H") +
   scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
   geom_vline(xintercept = 0, linetype=2) +
-  labs(title="GSEA, MSigDB Hallmark Gene Sets", y = "Gene Set") +
+  labs(title="GSEA, CanFam3.1, MSigDB Gene Sets\n Hallmark Collection", y = "Gene Set") +
   theme(plot.title = element_text(hjust = 0.5))
 
 ```
@@ -169,7 +206,7 @@ gse1_msigdb_all %>%
                          option="H") +
   scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
   geom_vline(xintercept = 0, linetype=2) +
-  labs(title="GSEA, All MSigDB Gene Sets", y = "Gene Set") +
+  labs(title="GSEA, CanFam3.1, MSigDB Gene Sets\nAll Categories", y = "Gene Set") +
   theme(plot.title = element_text(hjust = 0.5))
 
 ```
@@ -187,7 +224,7 @@ ridgeplot(gse1_msigdb_all, showCategory=15) + labs(x = "enrichment distribution"
 Export GSEA results for all significant results in all MSigDB categories as CSV files.
 ```{r data-export1}
 gse1_msigdb_df <- as.data.frame(gse1_msigdb_all)
-write.csv(gse1_msigdb_df, file="../03_output/YYMMDD_gsea_HallmarkMSigDBGeneSets.csv") # Replace with desired output path and filename
+write.csv(gse1_msigdb_df, file="../03_output/gseaMSigDBAll_CanFam31.csv") # Replace with desired output path and filename
 ```
 
 ## Using specific gene sets of interest from MSigDB

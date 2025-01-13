@@ -1,0 +1,334 @@
+---
+title: "Clustering Analysis of Canine PTCL Bulk RNA-seq Data"
+author: "Eileen Owens"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      cache = TRUE,
+                      keep_md = TRUE)
+```
+
+```{r load-packages, include=FALSE}
+library(DESeq2)
+library(RColorBrewer)
+library(pheatmap)
+library(dplyr)
+library(readr)
+library(knitr)
+library(ggplot2)
+```
+
+```{r working-directory, include=FALSE}
+# Set your working directory
+setwd("C:/Users/edlarsen/Documents/PTCLRNASeq")
+```
+
+# Introduction
+This script performs clustering and draws heatmaps of RNA-seq data, with a variety of filtering options.
+
+# Data
+### Variance stabilized transformed count matrix
+```{r data-input-vst, eval=TRUE}
+vsd_cohort1 <- read.csv("Cohort_1/Output/VST_NormalizedCounts.csv")
+vsd_cohort2 <- read.csv("Cohort_2/Output/VST_NormalizedCounts.csv")
+
+## Make gene names the row names
+rownames(vsd_cohort1) <- make.unique(as.character(vsd_cohort1$gene_name)) # make.unique accounts for duplicate gene names since R won't allow duplicate rownames
+rownames(vsd_cohort2) <- make.unique(as.character(vsd_cohort2$gene_name))
+
+## Remove any columns other than sample count data
+vsd_cohort1 <- dplyr::select(vsd_cohort1, -c("X", "probe_id", "gene_name", "description")) # exclude any columns that are not sample IDs
+vsd_cohort2 <- dplyr::select(vsd_cohort2, -c("X", "probe_id", "gene_name", "description")) # exclude any columns that are not sample IDs
+```
+
+### Metadata
+```{r metadata}
+metadata1 <- read.table(file = "Cohort_1/Input/metadata.txt", header = FALSE)
+metadata2 <- read.table(file = "Cohort_2/Input/metadata.txt", header = FALSE)
+colnames(metadata1) <- c("avery_num", "sample_name", "phenotype")
+colnames(metadata2) <- c("avery_num", "sample_name", "phenotype")
+rownames(metadata1) <- metadata1$sample_name
+metadata1 <- dplyr::select(metadata1, c("phenotype"))
+rownames(metadata2) <- metadata2$sample_name
+metadata2 <- dplyr::select(metadata2, c("phenotype"))
+```
+
+# Unsupervised clustering of the top 2000 genes (by median absolute derivation)
+```{r mad}
+# Calculate the median absolute derivation for all rows in the vst transformed data
+median_absolute_derivation_cohort1 = apply(vsd_cohort1,1,mad) # "1" indicates that the manipulation is performed on rows
+median_absolute_derivation_cohort2 = apply(vsd_cohort2,1,mad)
+
+# check data distribution
+hist(median_absolute_derivation_cohort1, ylim=c(0,200), main=c("Histogram of median absolute derivation, Cohort 1"), breaks=nrow(vsd_cohort1)*0.1)
+hist(median_absolute_derivation_cohort2, ylim=c(0,200), main=c("Histogram of median absolute derivation, Cohort 2"), breaks=nrow(vsd_cohort2)*0.1)
+
+# index the vst transformed count data to include only those rows (genes) that appeared in the top 2000 based on median absolute derivation.
+mad2k_cohort1=vsd_cohort1[rev(order(median_absolute_derivation_cohort1))[1:2000],]
+mad2k_cohort2=vsd_cohort2[rev(order(median_absolute_derivation_cohort1))[1:2000],]
+```
+
+## Euclidean distance
+```{r mad-heatmap-euclidean-cohort1, fig.width=14}
+# Specify colors (optional). Full list of color options here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
+ann_colors_cohort1 = list(
+  phenotype = c("CD8_PTCL" = "deepskyblue", "DN_PTCL" = "magenta2", "CD8_CTRL" = "seagreen3", "CD4_PTCL" = "darkkhaki", "CD4_CTRL" = "coral"))
+
+# Draw heatmap
+mad_heatmap_cohort1 <- pheatmap(mad2k_cohort1, 
+              scale="row",
+              color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+              cluster_rows=TRUE,
+              cluster_cols=TRUE,
+              #cutree_rows = 3,
+              cutree_cols = 3,
+              main = "Input: Vst transformed normalized DESeq2 counts for the top 2000 genes by median absolute derivation, Cohort 1 \n Clustering: Ward, Distance: Euclidean",
+              clustering_distance_rows = "euclidean",
+              clustering_distance_cols = "euclidean",
+              clustering_method = "ward.D2",
+              annotation_col = metadata1,
+              annotation_colors = ann_colors_cohort1,
+              show_rownames = FALSE) # Change to TRUE if gene symbols should be annotated on the heatmap.
+```
+
+```{r mad-heatmap-euclidean-cohort2, fig.width=14}
+# Specify colors (optional). Full list of color options here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
+ann_colors_cohort2 = list(
+  phenotype = c("CD4_LN_CTRL" = "coral", "CD4_PTCL" = "darkkhaki", "CD4THYM_CTRL" = "deepskyblue"))
+
+# Draw heatmap
+mad_heatmap_cohort2 <- pheatmap(mad2k_cohort2, 
+              scale="row",
+              color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+              cluster_rows=TRUE,
+              cluster_cols=TRUE,
+              #cutree_rows = 3,
+              cutree_cols = 3,
+              main = "Input: Vst transformed normalized DESeq2 counts for the top 2000 genes by median absolute derivation, Cohort 2 \n Clustering: Ward, Distance: Euclidean",
+              clustering_distance_rows = "euclidean",
+              clustering_distance_cols = "euclidean",
+              clustering_method = "ward.D2",
+              annotation_col = metadata2,
+              annotation_colors = ann_colors_cohort2,
+              show_rownames = FALSE) # Change to TRUE if gene symbols should be annotated on the heatmap.
+```
+
+## Pearson correlation
+```{r mad-heatmap-pearson-cohort1, fig.width=14}
+mad_heatmap_cohort1 <- pheatmap(mad2k_cohort1, 
+              scale="row",
+              color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+              cluster_rows=TRUE,
+              cluster_cols=TRUE,
+              #cutree_rows = 2,
+              cutree_cols = 3,
+              main = "Input: Vst transformed normalized DESeq2 counts for the top 2000 genes by median absolute derivation, Cohort 1\n Clustering: Ward, Distance: Pearson correlation",
+              clustering_distance_rows = "correlation",
+              clustering_distance_cols = "correlation",
+              clustering_method = "ward.D2",
+              annotation_col = metadata1,
+              annotation_colors = ann_colors_cohort1,
+              show_rownames = FALSE) # Change to TRUE if gene symbols should be annotated on the heatmap.
+```
+
+```{r mad-heatmap-pearson-cohort2, fig.width=14}
+mad_heatmap_cohort2 <- pheatmap(mad2k_cohort2, 
+              scale="row",
+              color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+              cluster_rows=TRUE,
+              cluster_cols=TRUE,
+              #cutree_rows = 2,
+              cutree_cols = 3,
+              main = "Input: Vst transformed normalized DESeq2 counts for the top 2000 genes by median absolute derivation, Cohort 2\n Clustering: Ward, Distance: Pearson correlation",
+              clustering_distance_rows = "correlation",
+              clustering_distance_cols = "correlation",
+              clustering_method = "ward.D2",
+              annotation_col = metadata2,
+              annotation_colors = ann_colors_cohort2,
+              show_rownames = FALSE) # Change to TRUE if gene symbols should be annotated on the heatmap.
+```
+
+# Clustering based on expression of human PTCL gene signatures
+## Iqbal et al.
+Source: https://doi.org/10.1182/blood-2013-11-536359
+```{r geneList}
+# Define list of genes and their groups
+geneList <- c("TBX21", "IFNG", "STAT1", "CSF2", "CCL3", "EOMES", "IL2RB", "CXCR3",
+              "GATA3", "EGR1", "SEPTIN6", "CAT", "IL18R1", "IK", "ACKR3", "CCR4", "MSH6")
+geneGroups <- c("TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL")
+geneGroup <- data.frame(Group = geneGroups)
+rownames(geneGroup) <- geneList
+
+# subset vst data to include only those genes
+vsd_geneList_cohort1 <- vsd_cohort1 %>%
+  filter(rownames(vsd_cohort1) %in% geneList)
+
+vsd_geneList_cohort2 <- vsd_cohort2 %>%
+  filter(rownames(vsd_cohort2) %in% geneList)
+```
+
+### Euclidean distance
+```{r IqbalGeneList-Euclidean-Cohort1, fig.width=14}
+# Specify colors (optional). Full list of color options here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
+ann_colors_cohort1 = list(
+  phenotype = c("CD8_PTCL" = "deepskyblue", "DN_PTCL" = "magenta2", "CD8_CTRL" = "seagreen3", "CD4_PTCL" = "darkkhaki", "CD4_CTRL" = "coral"),
+  Group = c("TBX21-PTCL" = "steelblue", "GATA3-PTCL" = "red4"))
+
+ann_colors_cohort2 = list(
+  phenotype = c("CD4_LN_CTRL" = "coral", "CD4_PTCL" = "darkkhaki", "CD4THYM_CTRL" = "deepskyblue"),
+  Group = c("TBX21-PTCL" = "steelblue", "GATA3-PTCL" = "red4"))
+
+# Generate heatmap
+vst_heatmap1 <- pheatmap(vsd_geneList_cohort1,
+                        scale="row", 
+                        color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+                        cluster_rows=TRUE, 
+                        cluster_cols=TRUE,
+                        cutree_rows = 2,
+                        cutree_cols = 3,
+                        clustering_distance_rows = "euclidean",
+                        clustering_distance_cols = "euclidean",
+                        clustering_method = "ward.D2",
+                        main = "Input: Vst transformed normalized DESeq2 counts, Cohort 1\n Clustering: Ward, Distance: Euclidean",
+                        annotation_col = metadata1,
+                       annotation_row = geneGroup,
+                       annotation_colors = ann_colors_cohort1,
+                       show_rownames = TRUE) # show gene names on the heatmap
+```
+
+```{r IqbalGeneList-Euclidean-Cohort2, fig.width=16}
+vst_heatmap2 <- pheatmap(vsd_geneList_cohort2,
+                        scale="row", 
+                        color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+                        cluster_rows=TRUE, 
+                        cluster_cols=TRUE,
+                        clustering_distance_rows = "euclidean",
+                        clustering_distance_cols = "euclidean",
+                        cutree_rows = 2,
+                        cutree_cols = 3,
+                        clustering_method = "ward.D2",
+                        main = "Input: Vst transformed normalized DESeq2 counts, Cohort 2\n Clustering: Ward, Distance: Euclidean",
+                        annotation_col = metadata2,
+                       annotation_row = geneGroup,
+                       annotation_colors = ann_colors_cohort2,
+                       show_rownames = TRUE) # show gene names on the heatmap
+```
+
+### Pearson correlation
+```{r IqbalGeneList-Pearson-Cohort1, fig.width=14}
+vst_heatmap1 <- pheatmap(vsd_geneList_cohort1,
+                        scale="row", 
+                        color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+                        cluster_rows=TRUE, 
+                        cluster_cols=TRUE,
+                        clustering_distance_rows = "correlation",
+                        clustering_distance_cols = "correlation",
+                        cutree_rows = 2,
+                        cutree_cols = 2,
+                        clustering_method = "ward.D2",
+                        main = "Input: Vst transformed normalized DESeq2 counts, Cohort1\nClustering: Ward, Distance: Pearson correlation",
+                        annotation_col = metadata1,
+                       annotation_row = geneGroup,
+                       annotation_colors = ann_colors_cohort1,
+                       show_rownames = TRUE) # show gene names on the heatmap
+```
+
+```{r IqbalGeneList-Pearson-Cohort2, fig.width=16}
+vst_heatmap2 <- pheatmap(vsd_geneList_cohort2,
+                        scale="row", 
+                        color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+                        cluster_rows=TRUE, 
+                        cluster_cols=TRUE,
+                        clustering_distance_rows = "correlation",
+                        clustering_distance_cols = "correlation",
+                        cutree_rows = 2,
+                        cutree_cols = 3,
+                        clustering_method = "ward.D2",
+                        main = "Input: Vst transformed normalized DESeq2 counts, Cohort2\nClustering: Ward, Distance: Pearson correlation",
+                        annotation_col = metadata2,
+                       annotation_row = geneGroup,
+                       annotation_colors = ann_colors_cohort2,
+                       show_rownames = TRUE) # show gene names on the heatmap
+```
+
+## Herek et al.
+Source: Fig. 1A of https://doi.org/10.1182/blood.2021015019
+```{r geneList-Herek}
+# Define list of genes and their groups
+geneList <- c("TBX21", "IFNG", "STAT1", "CSF2",
+              "GATA3", "EGR1", "SEPTIN6", "CAT")
+geneGroups <- c("TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL",
+                "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL")
+geneGroup <- data.frame(Group = geneGroups)
+rownames(geneGroup) <- geneList
+
+# subset vst data to include only those genes
+vsd_geneList_cohort1 <- vsd_cohort1 %>%
+  filter(rownames(vsd_cohort1) %in% geneList)
+
+vsd_geneList_cohort2 <- vsd_cohort2 %>%
+  filter(rownames(vsd_cohort2) %in% geneList)
+```
+
+## Euclidean distance
+```{r HerekGeneList-Euclidean-Cohort1, fig.width=14}
+# Specify colors (optional). Full list of color options here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
+ann_colors_cohort1 = list(
+  phenotype = c("CD8_PTCL" = "deepskyblue", "DN_PTCL" = "magenta2", "CD8_CTRL" = "seagreen3", "CD4_PTCL" = "darkkhaki", "CD4_CTRL" = "coral"),
+  Group = c("TBX21-PTCL" = "steelblue", "GATA3-PTCL" = "red4"))
+
+# Generate heatmap
+vst_heatmap1 <- pheatmap(vsd_geneList_cohort1,
+                        scale="row", 
+                        color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+                        cluster_rows=TRUE, 
+                        cluster_cols=TRUE,
+                        cutree_rows = 2,
+                        cutree_cols = 2,
+                        clustering_distance_rows = "euclidean",
+                        clustering_distance_cols = "euclidean",
+                        clustering_method = "ward.D2",
+                        main = "Input: Vst transformed normalized DESeq2 counts, Cohort 1\n Clustering: Ward, Distance: Euclidean",
+                        annotation_col = metadata1,
+                       annotation_row = geneGroup,
+                       annotation_colors = ann_colors_cohort1,
+                       show_rownames = TRUE) # show gene names on the heatmap
+```
+
+```{r HerekGeneList-Euclidean-Cohort2, fig.width=16}
+ann_colors_cohort2 = list(
+  phenotype = c("CD4_LN_CTRL" = "coral", "CD4_PTCL" = "darkkhaki", "CD4THYM_CTRL" = "deepskyblue"),
+  Group = c("TBX21-PTCL" = "steelblue", "GATA3-PTCL" = "red4"))
+
+# Generate heatmap
+vst_heatmap2 <- pheatmap(vsd_geneList_cohort2,
+                        scale="row", 
+                        color = colorRampPalette(c("blue", "white", "red"), space = "Lab")(100),
+                        cluster_rows=TRUE, 
+                        cluster_cols=TRUE,
+                        cutree_rows = 2,
+                        cutree_cols = 2,
+                        clustering_distance_rows = "euclidean",
+                        clustering_distance_cols = "euclidean",
+                        clustering_method = "ward.D2",
+                        main = "Input: Vst transformed normalized DESeq2 counts, Cohort 2\n Clustering: Ward, Distance: Euclidean",
+                        annotation_col = metadata2,
+                       annotation_row = geneGroup,
+                       annotation_colors = ann_colors_cohort2,
+                       show_rownames = TRUE) # show gene names on the heatmap
+```
+
+# Citations
+```{r}
+sessionInfo()
+citation()
+```
+
+

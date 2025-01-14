@@ -1,0 +1,635 @@
+---
+title: "Gene Set Enrichment and Variation Analyses of Canine CD4+ PTCL"
+author: "Eileen Owens"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      dpi = 300,
+                      cache = TRUE,
+                      warning = FALSE,
+                      keep_md = TRUE,
+                      fig.width=12, fig.height=8,
+                      fig.fullwidth=TRUE,
+                      message=FALSE)
+```
+
+# Introduction
+The purpose of this analysis is to perform GSEA and GSVA to evaluate the enrichment of differential gene expression data (DESeq2 output) for publicly available human and murine gene sets in the Molecular Signatures Database (MSigDB) and Gene Ontology terms using the package clusterProfiler.
+```{r installation, include=FALSE}
+# Load necessary packages
+library(BiocManager)
+library(DESeq2)
+library(clusterProfiler)
+library(dplyr)
+library(pathview)
+library(enrichplot)
+library(ggplot2)
+library(msigdbr)
+library(tidyverse)
+library(GSEABase)
+library(RColorBrewer)
+library(readr)
+library(knitr)
+library(GSVA)
+library(limma)
+library(gplots)
+```
+
+# GSEA
+## Data
+Input: DESeq2 results in .CSV format for various comparisons of interest.
+```{r data-input}
+setwd("C:/Users/edlarsen/Documents/PTCLRNASeq")
+# Read in data from deseq2
+df1 = read.csv("Cohort_1/Output/CD4_PTCLvsCD4_CTRL_DESeq2res.csv", header=TRUE)
+df2 = read.csv("Cohort_2/Output/CD4_PTCLvsCD4_LN_CTRL_DESeq2res.csv", header=TRUE)
+```
+
+### Rank genes
+There is no consensus for the what ranking metric should be used for GSEA. Popular options from the DESeq2 output include ranking by the 'log2FoldChange' column or the 'stat' column, which is the Wald test statistic. By default, this script ranks genes by the Wald test statistic. To rank by log2 fold change instead, replace 'stat' with 'log2FoldChange'.
+```{r rankgenes}
+# Rank genes by stat column of deseq2 result
+deg_genes_list1 <- df1$stat # Creates a vector of the stat column from DESeq2 output
+names(deg_genes_list1) <- df1$gene_name # Names vector with gene symbols
+deg_genes_list1 <- na.omit(deg_genes_list1) # Omits any NA values
+deg_genes_list1 = sort(deg_genes_list1, decreasing = TRUE) # Sorts in decreasing order
+deg_names1 <- names(deg_genes_list1) # Makes a vector of just the ranked gene names
+
+deg_genes_list2 <- df2$stat # Creates a vector of the stat column from DESeq2 output
+names(deg_genes_list2) <- df2$gene_name # Names vector with gene symbols
+deg_genes_list2 <- na.omit(deg_genes_list2) # Omits any NA values
+deg_genes_list2 = sort(deg_genes_list2, decreasing = TRUE) # Sorts in decreasing order
+deg_names2 <- names(deg_genes_list2) # Makes a vector of just the ranked gene names
+```
+
+Retrieve the collections of interest from MSigDB:
+```{r msigdb-import}
+# H = hallmark gene sets, C1 = positional gene sets, C2 = curated gene sets, C3 = motif gene sets, C4 = computational gene sets, C5 = GO gene sets, C6 = oncogenic signatures, C7 = immunologic signatures.
+m_t2g_C5 <- msigdbr(species = "Homo sapiens", category = "C5") %>%
+  dplyr::select(gs_name, gene_symbol)
+
+m_t2g_H <- msigdbr(species = "Homo sapiens", category = "H") %>%
+  dplyr::select(gs_name, gene_symbol)
+
+m_t2g_all <- msigdbr(species = "Homo sapiens") %>%
+  dplyr::select(gs_name, gene_symbol)
+```
+
+## GSEA using all gene sets in the C5 (gene ontology) MSigDB collection
+```{r gsea_C5}
+gse1_msigdb_C5 <- GSEA(deg_genes_list1,
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_C5,
+                  verbose = TRUE,
+                  by = "fgsea")
+
+gse2_msigdb_C5 <- GSEA(deg_genes_list2,
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_C5,
+                  verbose = TRUE,
+                  by = "fgsea")
+```
+
+```{r dotplotC5-Cohort1}
+gse1_msigdb_C5 %>%
+  dotplot(showCategory = 10, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 1, MSigDB Gene Sets\nC5 Collection (Gene Ontology)", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r dotplotC5-Cohort2}
+gse2_msigdb_C5 %>%
+  dotplot(showCategory = 10, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 2, MSigDB Gene Sets\nC5 Collection (Gene Ontology)", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## GSEA using all gene sets in the H (hallmark) MSigDB collection
+```{r gsea_H}
+gse1_msigdb_H <- GSEA(deg_genes_list1,
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_H,
+                  verbose = TRUE,
+                  by = "fgsea")
+
+gse2_msigdb_H <- GSEA(deg_genes_list2,
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_H,
+                  verbose = TRUE,
+                  by = "fgsea")
+```
+
+```{r dotplotH-Cohort1}
+gse1_msigdb_H %>%
+  dotplot(showCategory = 15, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 1, MSigDB Gene Sets\n Hallmark Collection", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r dotplotH-Cohort2}
+gse2_msigdb_H %>%
+  dotplot(showCategory = 15, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 2, MSigDB Gene Sets\n Hallmark Collection", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## GSEA using all gene sets from all MSigDB collections
+```{r gsea_all}
+gse1_msigdb_all <- GSEA(deg_genes_list1, # Use the sorted (ranked) list of gene symbols *and* stat ranking column
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_all,
+                  verbose = TRUE,
+                  by = "fgsea")
+
+gse2_msigdb_all <- GSEA(deg_genes_list2, # Use the sorted (ranked) list of gene symbols *and* stat ranking column
+                  exponent = 1,
+                  nPerm = 10000,
+                  minGSSize = 1,
+                  maxGSSize = 800,
+                  pvalueCutoff = 0.05,
+                  pAdjustMethod = "BH",
+                  TERM2GENE = m_t2g_all,
+                  verbose = TRUE,
+                  by = "fgsea")
+```
+
+```{r dotplotAll-Cohort1, fig.height = 14}
+gse1_msigdb_all %>%
+  dotplot(showCategory = 15, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) +
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 1, MSigDB Gene Sets\n All Collections", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r dotplotAll-Cohort2, fig.height = 14}
+gse2_msigdb_all %>%
+  dotplot(showCategory = 15, x = "NES", split=".sign") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) +
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 2, MSigDB Gene Sets\n All Collections", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Export GSEA results for all significant results in all MSigDB categories as CSV files:
+```{r data-export1}
+gse1_msigdb_df <- as.data.frame(gse1_msigdb_all)
+write.csv(gse1_msigdb_df, file="Cohort_1/Output/Cohort1_gsea_MSigDBGeneSets.csv")
+gse2_msigdb_df <- as.data.frame(gse2_msigdb_all)
+write.csv(gse2_msigdb_df, file="Cohort_2/Output/Cohort2_gsea_MSigDBGeneSets.csv")
+```
+
+## GSEA for specific gene sets of interest
+### Cell signaling pathways enriched in human PTCL
+```{r gsea-signaling, warning=FALSE, message=FALSE, results='hide'}
+# import gmt
+signaling_gmt <- read.gmt("CombinedSignalingPathways.gmt")
+
+## Perform GSEA with order ranked gene list and TERM2GENE = the merged data frames of our annotated gene sets of interest.
+### Cohort 1
+gse_signaling1 <- GSEA(deg_genes_list1, # Use the sorted list of gene symbols *and* stat ranking column
+                   exponent = 1,
+                   pvalueCutoff = 0.05,
+                   pAdjustMethod = "BH",
+                   TERM2GENE = signaling_gmt,
+                   verbose = TRUE,
+                   by = "fgsea")
+
+### Cohort 2
+gse_signaling2 <- GSEA(deg_genes_list2, # Use the sorted list of gene symbols *and* stat ranking column
+                   exponent = 1,
+                   pvalueCutoff = 0.05,
+                   pAdjustMethod = "BH",
+                   TERM2GENE = signaling_gmt,
+                   verbose = TRUE,
+                   by = "fgsea")
+```
+
+```{r dotplotSignaling-Cohort1, warning=FALSE}
+gse_signaling1 %>%
+  dotplot(showCategory = 30, x = "NES") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 1, Common PTCL Signaling Pathways", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r enrichplotSignaling-Cohort1, fig.height = 6, fig.width = 9}
+gseaplot2(gse_signaling1, 
+          geneSetID = c("MTOR_UP.V1_UP",
+                        "PTEN_DN.V1_UP",
+                        "AKT_UP.V1_UP",
+                        "HALLMARK_MTORC1_SIGNALING",
+                        "WP_PI3KAKT_SIGNALING_PATHWAY"
+                        ),
+          title = "Effector Sets - Cohort 1",
+          color = c("#1F77B4", "#D62728"))
+```
+
+```{r dotplotSignaling-Cohort2, warning=FALSE}
+gse_signaling2 %>%
+  dotplot(showCategory = 30, x = "NES") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 2, Common PTCL Signaling Pathways", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r enrichplotSignaling-Cohort2, fig.height = 6, fig.width = 9}
+gseaplot2(gse_signaling2, 
+          geneSetID = c("MTOR_UP.V1_UP",
+                        "PTEN_DN.V1_UP",
+                        "AKT_UP.V1_UP",
+                        "HALLMARK_MTORC1_SIGNALING",
+                        "WP_PI3KAKT_SIGNALING_PATHWAY"
+                        ),
+          title = "Effector Sets - Cohort 2",
+          color = c("#1F77B4", "#D62728")
+)
+```
+
+### T-cell development and differentiation gene signatures
+```{r gsea-origin, warning=FALSE, message=FALSE, results='hide'}
+# import gmt
+cellorigin_gmt <- read.gmt("thymusTCellAndTCRGeneSets.gmt")
+
+### Cohort 1
+gse_origin1 <- GSEA(deg_genes_list1, # Use the sorted list of gene symbols *and* stat ranking column
+                   exponent = 1,
+                   pvalueCutoff = 0.05,
+                   pAdjustMethod = "BH",
+                   TERM2GENE = cellorigin_gmt,
+                   verbose = TRUE,
+                   by = "fgsea")
+
+### Cohort 2
+gse_origin2 <- GSEA(deg_genes_list2, # Use the sorted list of gene symbols *and* stat ranking column
+                   exponent = 1,
+                   pvalueCutoff = 0.05,
+                   pAdjustMethod = "BH",
+                   TERM2GENE = cellorigin_gmt,
+                   verbose = TRUE,
+                   by = "fgsea")
+```
+
+```{r dotplotOrigin-Cohort1, warning=FALSE, fig.width = 10, fig.height = 8}
+gse_origin1 %>%
+  dotplot(showCategory = 15, x = "NES") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 1, Signatures of T-cell Development and Differentiation", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r enrichplotOrigin-Cohort1, fig.height = 12, fig.width = 17}
+gseaplot2(gse_origin1, 
+          geneSetID = c("LEE_EARLY_T_LYMPHOCYTE_UP",
+                        "GSE139242_CD4_THYMOCYTES_VS_ADULT_BLOOD_TOP250UP",
+                        "GSE139242_CD4_THYMOCYTES_VS_INFANT_BLOOD_TOP250UP",
+                        "GSE1460_INTRATHYMIC_T_PROGENITOR_VS_NAIVE_CD4_TCELL_ADULT_BLOOD_UP",
+                        "GSE1460_CD4_THYMOCYTE_VS_NAIVE_CD4_TCELL_ADULT_BLOOD_UP",
+                        "BIOCARTA_TCR_PATHWAY",
+                        "WP_T_CELL_RECEPTOR_AND_COSTIMULATORY_SIGNALING"),
+          title = "Effector Sets - Cohort 1",
+          color = c("#1F77B4", "#D62728")
+)
+```
+
+```{r dotplotOrigin-Cohort2, fig.width = 10, fig.height = 8, warning=FALSE}
+gse_origin2 %>%
+  dotplot(showCategory = 30, x = "NES") +
+  scale_colour_viridis_c(name = "Adjusted\nP-value",
+                         option="H") +
+  scale_y_discrete(labels = ~ str_wrap(gsub('_', ' ', .x), 40)) + # replaces underscores with spaces to allow wrapping of long gene set names
+  geom_vline(xintercept = 0, linetype=2) +
+  labs(title="GSEA, Cohort 2, Signatures of T-cell Development and Differentiation", y = "Gene Set") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r enrichplotOrigin-Cohort2, fig.height = 12, fig.width = 17}
+gseaplot2(gse_origin2, 
+          geneSetID = c("LEE_EARLY_T_LYMPHOCYTE_UP",
+                        "GSE22886_NAIVE_CD4_TCELL_VS_MEMORY_TCELL_UP",
+                        "GSE1460_DP_THYMOCYTE_VS_NAIVE_CD4_TCELL_ADULT_BLOOD_UP",
+                        "GSE1460_INTRATHYMIC_T_PROGENITOR_VS_NAIVE_CD4_TCELL_ADULT_BLOOD_UP",
+                        "GSE1460_CD4_THYMOCYTE_VS_NAIVE_CD4_TCELL_ADULT_BLOOD_UP",
+                        "BIOCARTA_TCR_PATHWAY",
+                        "WP_T_CELL_RECEPTOR_AND_COSTIMULATORY_SIGNALING"),
+          title = "Effector Sets - Cohort 2",
+          color = c("#1F77B4", "#D62728")
+)
+```
+
+# GSVA
+#### Data
+```{r data-input-gsva}
+# variance stabilized transformed count matrices
+vsd_cohort1 <- read.csv("Cohort_1/Output/VST_NormalizedCounts.csv")
+vsd_cohort2 <- read.csv("Cohort_2/Output/VST_NormalizedCounts.csv")
+
+# metadata
+metadata1 <- read.table(file = "Cohort_1/Input/metadata.txt", header = FALSE)
+colnames(metadata1) <- c("avery_num", "sample_name", "phenotype")
+rownames(metadata1) <- metadata1$sample_name
+metadata1 <- dplyr::select(metadata1, c("phenotype"))
+metadata1 <- metadata1[row.names(metadata1) != "CF21", , drop = FALSE]
+
+metadata2 <- read.table(file = "Cohort_2/Input/metadata.txt", header = FALSE)
+colnames(metadata2) <- c("avery_num", "sample_name", "phenotype")
+rownames(metadata2) <- metadata2$sample_name
+metadata2 <- dplyr::select(metadata2, c("phenotype"))
+
+# gmt file
+gmt_BMC <- getGmt("combined_cellOrigin_gmt.gmt", geneIdType = SymbolIdentifier())
+gmt <- getGmt("thymusTCellAndTCRGeneSets.gmt", geneIdType = SymbolIdentifier())
+
+# prepare vst data for GSVA
+
+vsd_cohort1 <- vsd_cohort1[!duplicated(vsd_cohort1$gene_name), ]
+rownames(vsd_cohort1) <- vsd_cohort1$gene_name
+vsd_cohort1 <- dplyr::select(vsd_cohort1, -c("X", "probe_id", "gene_name", "description"))
+vsd_cohort1_matrix <- data.matrix(vsd_cohort1) # Convert to a matrix prior to analysis.
+
+## keep only CD4 PTCL and CD4 CTRL samples from Cohort 1
+keepGroups <- c("CD4_PTCL", "CD4_CTRL")
+metadata1 <- metadata1 %>%
+  filter(phenotype %in% keepGroups)
+keepList <- rownames(metadata1)
+vsd_cohort1_matrix <- vsd_cohort1_matrix[, colnames(vsd_cohort1_matrix) %in% keepList]
+
+vsd_cohort2 <- vsd_cohort2[!duplicated(vsd_cohort2$gene_name), ]
+rownames(vsd_cohort2) <- vsd_cohort2$gene_name
+vsd_cohort2 <- dplyr::select(vsd_cohort2, -c("X", "probe_id", "gene_name", "description"))
+vsd_cohort2_matrix <- data.matrix(vsd_cohort2) # Convert to a matrix prior to analysis.
+```
+
+### Analysis
+```{r GSVA-Cohort1, fig.width=14, message=FALSE}
+##### Cohort 1 #####
+# set parameters for GSVA
+gsva_param1 <- gsvaParam(
+  vsd_cohort1_matrix,
+  gmt_BMC,
+  kcdf = "Gaussian", # Compute Gaussian-distributed scores
+  minSize = 10, # Minimum gene set size
+  maxSize = 500, # Maximum gene set size
+  maxDiff = TRUE,
+  absRanking = FALSE
+)
+
+# perform GSVA
+gsva_results1 <- gsva(
+  gsva_param1,
+  verbose=FALSE,   # Don't print out the progress bar
+)
+
+gsva_heatmap1 <- pheatmap::pheatmap(gsva_results1,
+                                      annotation_col = metadata1,
+                                      show_colnames = TRUE,
+                                      show_rownames = TRUE,
+                                      fontsize_row = 10,
+                                      cluster_cols = TRUE, 
+                                      cluster_rows = TRUE,
+                                      cutree_rows = 3,
+                                      cutree_cols = 3,
+                                      main = "GSVA. Input: Vst transformed normalized DESeq2 counts, Cohort 1\nClustering: Ward, Distance: Euclidean",
+                                      clustering_distance_rows = "euclidean",
+                                      clustering_distance_cols = "euclidean",
+                                      clustering_method = "ward.D2") + 
+ scale_fill_gradient(c('dodgerblue', 'black', "yellow"))# Shrink the pathway labels a tad
+```
+
+```{r GSVA-Cohort2, message=FALSE, fig.height=12, fig.width=22, fig.fullwidth=TRUE}
+# set parameters for GSVA
+gsva_param2 <- gsvaParam(
+  vsd_cohort2_matrix,
+  gmt,
+  kcdf = "Gaussian", # Compute Gaussian-distributed scores
+  minSize = 10, # Minimum gene set size
+  maxSize = 500, # Maximum gene set size
+  maxDiff = TRUE,
+  absRanking = FALSE
+)
+
+# perform GSVA
+gsva_results2 <- gsva(
+  gsva_param2,
+  verbose=FALSE,   # Don't print out the progress bar
+)
+
+gsva_heatmap2 <- pheatmap::pheatmap(gsva_results2,
+                                      annotation_col = metadata2,
+                                      show_colnames = TRUE,
+                                      show_rownames = TRUE,
+                                      fontsize_row = 10,
+                                      cluster_cols = TRUE, 
+                                      cluster_rows = TRUE,
+                                      cutree_rows = 3,
+                                      cutree_cols = 4,
+                                      main = "GSVA. Input: Vst transformed normalized DESeq2 counts, Cohort 2\nClustering: Ward, Distance: Euclidean",
+                                      clustering_distance_rows = "euclidean",
+                                      clustering_distance_cols = "euclidean",
+                                      clustering_method = "ward.D2") + 
+ scale_fill_gradient(c('dodgerblue', 'black', "yellow"))# Shrink the pathway labels a tad
+```
+
+## Statistical analysis of GSVA scores
+```{r limma}
+# Convert metadata file to annotated data frame
+annot_metadata1 <- AnnotatedDataFrame(data=metadata1) 
+annot_metadata2 <- AnnotatedDataFrame(data=metadata2) 
+
+# Create ExpressionSet object from gsva results matrix and the new metadata. Colnames of gsva_results must match rownames of annot_metadata
+gsva_exp1 <- ExpressionSet(assayData = gsva_results1, phenoData = annot_metadata1)
+gsva_exp2 <- ExpressionSet(assayData = gsva_results2, phenoData = annot_metadata2)
+
+# Perform differential expression anlaysis using limma package
+mod1 <- model.matrix(~ factor(gsva_exp1$phenotype))
+fit1 <- lmFit(gsva_results1, mod1)
+fit1 <- eBayes(fit1)
+res1 <- decideTests(fit1, p.value=0.05)
+summary(res1)
+
+# set factor levels for Cohort 2 since there are more than 2 groups
+cohort2_groups <- factor(gsva_exp2$phenotype, levels = c("CD4_PTCL", "CD4_LN_CTRL", "CD4THYM_CTRL"))
+mod2 <- model.matrix(~ cohort2_groups)
+fit2 <- lmFit(gsva_results2, mod2)
+fit2 <- eBayes(fit2)
+res2 <- decideTests(fit2, p.value=0.05)
+summary(res2)
+
+# Export
+fit1_df <- as.data.frame(fit1)
+rownames(fit1_df) <- rownames(fit1)
+write.csv(fit1_df, file="Cohort_1/Output/GSVAlimma_CD4PTCLvsCD4CTRL.csv")
+
+fit2_df <- as.data.frame(fit2)
+rownames(fit2_df) <- rownames(fit2)
+write.csv(fit2_df, file="Cohort_2/Output/GSVAlimma_CD4PTCLvsCD4CTRL.csv")
+```
+
+## Heatmap of only differentially expressed pathways in CD4 PTCL vs CD4 CTRL
+```{r limma-res}
+# Cohort 1
+tt1 <- topTable(fit1, coef=2, n=Inf) # Coefficient is the column of the comparison of interest.
+DEpwys1 <- rownames(tt1)[tt1$adj.P.Val <= 0.05] # Extract only those gene sets differentially expressed with p > 0.05
+DEpwys_es1 <- exprs(gsva_exp1[DEpwys1, ]) # Index the Expression Set for only those significantly differentially expressed gene sets.
+
+# Cohort 2
+## CD4_PTCL vs CD4_LN_CTRL
+tt2 <- topTable(fit2, coef="cohort2_groupsCD4_LN_CTRL", n=Inf) 
+DEpwys2 <- rownames(tt2)[tt2$adj.P.Val <= 0.05]
+DEpwys_es2 <- exprs(gsva_exp2[DEpwys2, ])
+
+## CD4_PTCL vs CD4_THYM_CTRL
+tt3 <- topTable(fit2, coef="cohort2_groupsCD4THYM_CTRL", n=Inf) 
+DEpwys3 <- rownames(tt3)[tt3$adj.P.Val <= 0.05]
+DEpwys_es3 <- exprs(gsva_exp2[DEpwys3, ])
+
+# Export
+write.csv(tt1, file="Cohort_1/Output/GSVAlimma_CD4PTCLvCD4CTRL_toptable.csv")
+write.csv(tt2, file="Cohort_2/Output/GSVAlimma_CD4PTCLvCD4_LN_CTRL_toptable.csv")
+write.csv(tt3, file="Cohort_2/Output/GSVAlimma_CD4PTCLvCD4_THYM_CTRL_toptable.csv")
+```
+
+```{r sig-GSVA-Cohort1, fig.width = 12, fig.height = 6}
+# Draw  heatmaps
+## Cohort 1
+### Set phenotype labels for display on heatmap
+colorLegend <- c("mediumaquamarine", "orange1") 
+names(colorLegend) <- c("CD4_PTCL", "CD4_CTRL")
+sample.color.map <- colorLegend[pData(gsva_exp1)[, "phenotype"]] 
+names(sample.color.map) <- colnames(DEpwys_es1)
+
+### Reset graphics settings (this heatmap is large and could throw margin size errors)
+#graphics.off()
+
+### Perform hierarchical clustering of GSVA scores
+sampleClustering1 <- hclust(as.dist(1-cor(DEpwys_es1, method="spearman")),
+                           method="ward.D2")
+geneSetClustering1 <- hclust(as.dist(1-cor(t(DEpwys_es1), method="pearson")),
+                            method="ward.D2")
+
+### Plot
+colors <- colorRampPalette(c("dodgerblue4", "aliceblue", "firebrick1"))(256)
+par(mar=c(1,10,1,10))
+
+heatmap.2(DEpwys_es1,
+          scale="row",
+          col=colors,
+          ColSideColors=sample.color.map,
+          xlab="",
+          ylab="",
+          main="Gene Set Variation Analysis, Cohort 1",
+          trace="none",
+          keysize=1,
+          density.info="none",
+          margins=c(8,35),
+          labRow=rownames(DEpwys_es1),
+          labCol=sampleClustering1$labels,
+          Colv=as.dendrogram(sampleClustering1),
+          Rowv=as.dendrogram(geneSetClustering1))
+legend("topright", names(colorLegend), fill=colorLegend, inset=0.1, bty="n")
+```
+
+```{r sig-GSVA-Cohort2, fig.width = 20, fig.height = 10}
+## Cohort 2
+### Set phenotype labels for display on heatmap
+colorLegend <- c("mediumaquamarine", "orange1", "steelblue") 
+names(colorLegend) <- c("CD4_PTCL", "CD4_LN_CTRL", "CD4THYM_CTRL")
+sample.color.map <- colorLegend[pData(gsva_exp2)[, "phenotype"]] 
+names(sample.color.map) <- colnames(DEpwys_es2)
+
+### Reset graphics settings (this heatmap is large and could throw margin size errors)
+#graphics.off()
+
+### Perform hierarchical clustering of GSVA scores
+sampleClustering2 <- hclust(as.dist(1-cor(DEpwys_es2, method="spearman")),
+                           method="ward.D2")
+geneSetClustering2 <- hclust(as.dist(1-cor(t(DEpwys_es2), method="pearson")),
+                            method="ward.D2")
+
+### Plot
+colors <- colorRampPalette(c("dodgerblue4", "aliceblue", "firebrick1"))(256)
+par(oma = c(0, 0, 0, 0))  # Reduce outer margins
+par(mar = c(4, 4, 2, 1))  # Fine-tune inner margins
+
+heatmap.2(DEpwys_es2,
+          scale="row",
+          col=colors,
+          ColSideColors=sample.color.map,
+          xlab="",
+          ylab="",
+          main="Gene Set Variation Analysis, Cohort 2",
+          trace="none",
+          keysize=0.6,
+          density.info="none",
+          margins=c(3,40),
+          labRow=rownames(DEpwys_es2),
+          labCol=sampleClustering2$labels,
+          Colv=as.dendrogram(sampleClustering2),
+          Rowv=as.dendrogram(geneSetClustering2))
+legend("topright", names(colorLegend), fill=colorLegend, inset=0.05, bty="n")
+```
+
+
+
+# Citations
+```{r}
+sessionInfo()
+citation()
+```

@@ -160,9 +160,10 @@ mad_heatmap_cohort2 <- pheatmap(mad2k_cohort2,
 Source: https://doi.org/10.1182/blood-2013-11-536359
 ```{r geneList}
 # Define list of genes and their groups
-geneList <- c("TBX21", "IFNG", "STAT1", "CSF2", "CCL3", "EOMES", "IL2RB", "CXCR3",
+geneList <- c("TBX21", "IFNG", "STAT1", "CSF2", "CCL3", "EOMES", "IL2RB", "CXCR3", "CD28", "AXL", "CD40", "CD59", "FTL", "LILRB1", "SIRPA",
               "GATA3", "EGR1", "SEPTIN6", "CAT", "IL18R1", "IK", "ACKR3", "CCR4", "MSH6")
-geneGroups <- c("TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL")
+geneGroups <- c("TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL", "TBX21-PTCL",
+                "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL", "GATA3-PTCL")
 geneGroup <- data.frame(Group = geneGroups)
 rownames(geneGroup) <- geneList
 
@@ -211,7 +212,7 @@ vst_heatmap2 <- pheatmap(vsd_geneList_cohort2,
                         cluster_cols=TRUE,
                         clustering_distance_rows = "euclidean",
                         clustering_distance_cols = "euclidean",
-                        cutree_rows = 2,
+                        cutree_rows = 3,
                         cutree_cols = 3,
                         clustering_method = "ward.D2",
                         main = "Input: Vst transformed normalized DESeq2 counts, Cohort 2\n Clustering: Ward, Distance: Euclidean",
@@ -330,5 +331,3 @@ vst_heatmap2 <- pheatmap(vsd_geneList_cohort2,
 sessionInfo()
 citation()
 ```
-
-
